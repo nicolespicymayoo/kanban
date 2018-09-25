@@ -1,0 +1,25 @@
+{
+  "extends": [ "tslint-config-prettier"],
+
+  "rules": {
+    "interface-name": [
+      true,
+      "never-prefix"
+    ],
+    "array-type": [
+      true,
+      "generic"
+    ],
+    "member-access": [
+      true,
+      "no-public"
+    ],
+    "no-console": false,
+    "jsx-no-bind": [
+      0,
+      {"allowArrowFunctions": true}
+    ],
+    "jsx-no-lambda": false,
+    "ordered-imports": false
+  }
+}

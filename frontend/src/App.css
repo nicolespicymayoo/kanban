@@ -1,0 +1,62 @@
+.App {
+  padding: 20px;
+  font-weight: 300;
+}
+
+.title {
+  font-size: 1.5em;
+}
+
+.kanban{
+  display: flex;
+  flex-direction: row;
+}
+
+.board {
+  margin: 10px 4px;
+  width: 280px;
+  border: 1px solid black;
+  border-radius: 5px;
+  padding: 15px 20px 25px;
+
+}
+
+.tasks {
+    display: flex;
+  flex-direction: column;
+}
+
+.boardTitle {
+  display: inline-block;
+  font-weight: 500;
+  margin: 10px 0 16px;
+  vertical-align: middle;
+}
+
+.deleteBoardButton {
+  float: right;
+  vertical-align: middle;
+}
+
+.delete-task-button {
+  display: inline-block;
+  text-align: right;
+}
+
+.taskItem {
+  padding: 6px 2px;
+}
+
+.taskText {
+  display: inline;
+}
+
+.taskButtonsContainer {
+  float: right;
+}
+
+.taskButton{
+  display: inline;
+}
+
+
