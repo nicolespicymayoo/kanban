@@ -1,29 +1,49 @@
-// import * as React from 'react'
-// import {Board} from './App'
+import * as React from 'react'
+import styled from 'styled-components'
 
-// type Props = {
+type Props = {
+  text: string,
+  taskID: number,
+  taskIndex: number,
+  boardIndex: number, 
+  boardLength: number,
+  moveRight: ((taskID: number) => void),
+  moveLeft: ((taskID: number) => void),
+  moveUp: ((taskID: number) => void),
+  moveDown: ((taskID: number) => void),
+  deleteTask: ((taskID: number) => void),
+}
 
-//   text: string,
-//   // moveRight: ((boardIndex: number, taskIndex: number) => void),
-//   // moveLeft: ((boardIndex: number, taskIndex: number) => void),
-//   // moveUp: ((boardIndex: number, taskIndex: number) => void),
-//   // moveDown: ((boardIndex: number, taskIndex: number) => void),
-//   // deleteTask: ((boardIndex: number, taskIndex: number) => void),
-// }
+class Task extends React.Component<Props, {}>{
+  render(){
+    return (
+      <TaskContainer>
+        <Text key={this.props.taskID}>{this.props.text}</Text>
+        <ButtonContainer>
+          {this.props.boardIndex > 0 ? <Button onClick={() => this.props.moveLeft(this.props.taskID)}> ⇦ </Button> : null}
+          {this.props.taskIndex > 0 ? <Button onClick={() => this.props.moveUp(this.props.taskID)}> ⇧ </Button> : null}
+          {this.props.taskIndex < this.props.boardLength - 1 ? <Button onClick={() => this.props.moveDown(this.props.taskID)}> ⇩ </Button> : null}
+          {this.props.boardIndex < this.props.boardLength ? <Button onClick={() => this.props.moveRight(this.props.taskID)}> ⇨ </Button> : null}
+          <Button onClick={() => this.props.deleteTask(this.props.taskID)}> ✕ </Button>
+        </ButtonContainer>
+      </TaskContainer>
+    )
+  }
+}
 
-// class TaskComponent extends React.Component<Props, {}>{
-//   render(){
-//     return (
-//       <div className='taskContainer'>
-//         <div className="taskText" key={this.props.taskIndex}>{this.props.text}</div>
-//         {/* {this.props.boardIndex > 0 ? <button className='taskButton' id='leftButton' onClick={() => this.props.moveLeft(this.props.boardIndex, this.props.taskIndex)}> left </button> : null}
-//         {this.props.taskIndex > 0 ? <button className='taskButton' id='upButton' onClick={() => this.props.moveUp(this.props.boardIndex, this.props.taskIndex)}>^</button> : null}
-//         {this.props.taskIndex < this.props.boards[this.props.boardIndex].length - 1 ? <button className='taskButton' id='downButton' onClick={() => this.props.moveDown(this.props.boardIndex, this.props.taskIndex)}>v</button> : null }
-//         {this.props.boardIndex < this.props.boardCount - 1 ? <button className='taskButton' id='rightButton' onClick={() => this.props.moveRight(this.props.boardIndex, this.props.taskIndex)}>></button> : null} */}
-//         <button className='delete-task-button' onClick={() => this.props.deleteTask(this.props.boardIndex, this.props.taskIndex)}>x</button>
-//       </div>
-//     )
-//   }
-// }
+export default Task
 
-// export default TaskComponent
+const TaskContainer = styled.div`
+  clear: both;
+  padding: 6px 2px;
+`
+const Text = styled.p`
+  display: inline;
+`
+const ButtonContainer = styled.div`
+  float: right;
+`
+
+const Button = styled.button`
+  display: inline;
+`

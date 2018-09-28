@@ -1,6 +1,7 @@
 import *  as React from 'react'
 import { Link } from 'react-router-dom'
-import fetchAPI from './fetchAPI'
+import { fetchPOST } from './fetchAPI'
+import styled from 'styled-components'
 
 interface State {
   username: string
@@ -26,13 +27,14 @@ class Login extends React.Component<{}, State>{
   submitForm = () => {
     const username = this.state.username
     const password = this.state.password
-    fetchAPI('/login', 'POST', {
+    fetchPOST('/login' ,{
       user: username,
       password: password
     }).then(response => response.json())
     .then(res => {
       if ( res.success ){
         localStorage.setItem('sessionToken', res.token)
+        localStorage.setItem('loggingIn', 'true')
         location.href = '/kanban'
       } else {
         this.setState({error: 'login failed'})
@@ -40,12 +42,6 @@ class Login extends React.Component<{}, State>{
       
     })
     .catch(error => console.log(error))
-    // take this.state.username
-    // & this.this.state.password,
-    // send it to the backend to verify in the database
-    // send response : success or fail
-    // if success, log in (link to user's kanban board)
-    // else display error
   }
 
   handleChangeUsername = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -58,15 +54,61 @@ class Login extends React.Component<{}, State>{
 
   render() {
     return (
-      <div className='signInForm'>
-        <div className='title'>Log in</div>
-        <input className='username' onChange={this.handleChangeUsername}/>
-        <input className='password' onChange={this.handleChangePassword} type='password'/>
-        <button className='submitButton' onClick={this.submitForm}>Sign In</button>
-        <div>No account? <Link to='/sign-up'>Sign Up</Link></div>
-      </div>
+      <Container>
+        <LoginForm>
+          <Title>Log in</Title>
+          <Input  placeholder='username' onChange={this.handleChangeUsername}/>
+          <Input placeholder='password' onChange={this.handleChangePassword} type='password'/>
+          <Button className='submitButton' onClick={this.submitForm}>Sign In</Button>
+          <Signup>No account? <Link to='/sign-up'>Sign Up</Link></Signup>
+        </LoginForm>
+      </Container>
     )
   }
 }
 
 export default Login
+
+const Container = styled.div`
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`
+
+const LoginForm = styled.div`
+  border: 1px solid rgba(0,0,0,.1);
+  padding: 50px 40px 70px
+  border-radius: 5px;
+`
+
+const Title = styled.h3`
+  font-weight: 200;
+  width: auto;
+  margin: 0;
+  margin-bottom: 25px;
+`
+const Input = styled.input`
+  display: block;
+  height: 28px;
+  width: 200px;
+  padding-left: 5px;
+  margin: 4px 0;
+  font-size: 14px;
+  font-weight: 200;
+`
+
+const Button = styled.button`
+  width: 100%;
+  height: 28px;
+  background-color: rgba(82, 194, 250, .5);
+  border: 1px solid rgba(42, 152, 247, .8);
+  border-radius: 3px;
+  color: white;
+  font-size: 13px;
+  margin: 20px 0 8px;
+`
+const Signup = styled.div`
+  font-size: 12px;
+`

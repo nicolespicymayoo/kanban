@@ -86,7 +86,8 @@ typeorm_1.createConnection({
             await sessionRepository.save(userSession);
             res.send({
                 success: true,
-                token: sessionToken
+                token: sessionToken,
+                loggingIn: true
             });
         }
         else {
@@ -128,7 +129,6 @@ typeorm_1.createConnection({
     app.post("/addBoard", guarded(async (req, res, session) => {
         const boardTitle = req.body.name;
         const currBoards = await connection.manager.find(entities_1.Boards, { where: { user: session.user } });
-        console.log("curr boards length", currBoards);
         const index = currBoards.length;
         const newBoard = new entities_1.Boards();
         newBoard.name = boardTitle;
@@ -156,26 +156,25 @@ typeorm_1.createConnection({
         getBoards(session.user)
             .then(boards => sendBoards(res, boards));
     }));
-    app.post("/moveBoard", guarded(async (req, res, session) => {
+    app.post("/moveBoard/left", guarded(async (req, res, session) => {
         const currBoardID = req.body.boardID;
-        const direction = req.body.direction;
         const currBoard = await connection.manager.findOne(entities_1.Boards, currBoardID);
-        const rightBoard = await connection.manager.findOne(entities_1.Boards, { where: { index: currBoard.index + 1 } });
-        const leftBoard = await connection.manager.findOne(entities_1.Boards, { where: { index: currBoard.index - 1 } });
-        if (direction === "right") {
-            currBoard.index = currBoard.index + 1;
-            rightBoard.index = rightBoard.index - 1;
-            await connection.manager.save([currBoard, rightBoard]);
-            getBoards(session.user)
-                .then(boards => sendBoards(res, boards));
-        }
-        if (direction === "left") {
-            currBoard.index = currBoard.index - 1;
-            leftBoard.index = leftBoard.index + 1;
-            await connection.manager.save([currBoard, leftBoard]);
-            getBoards(session.user)
-                .then(boards => sendBoards(res, boards));
-        }
+        const leftBoard = await connection.manager.findOne(entities_1.Boards, { where: { user: session.user, index: currBoard.index - 1 } });
+        currBoard.index = currBoard.index - 1;
+        leftBoard.index = leftBoard.index + 1;
+        await connection.manager.save([currBoard, leftBoard]);
+        getBoards(session.user)
+            .then(boards => sendBoards(res, boards));
+    }));
+    app.post("/moveBoard/right", guarded(async (req, res, session) => {
+        const currBoardID = req.body.boardID;
+        const currBoard = await connection.manager.findOne(entities_1.Boards, currBoardID);
+        const rightBoard = await connection.manager.findOne(entities_1.Boards, { where: { user: session.user, index: currBoard.index + 1 } });
+        currBoard.index = currBoard.index + 1;
+        rightBoard.index = rightBoard.index - 1;
+        await connection.manager.save([currBoard, rightBoard]);
+        getBoards(session.user)
+            .then(boards => sendBoards(res, boards));
     }));
     app.post("/addTask", guarded(async (req, res, session) => {
         const text = req.body.text;
@@ -209,91 +208,72 @@ typeorm_1.createConnection({
         getBoards(session.user)
             .then(boards => sendBoards(res, boards));
     }));
-    app.post("/moveTask", guarded(async (req, res, session) => {
-        const direction = req.body.direction;
+    app.post("/moveTask/right", guarded(async (req, res, session) => {
         const taskID = req.body.taskID;
         const currTask = await connection.manager.findOne(entities_1.Tasks, taskID, { relations: ["board"] });
         const currBoard = currTask.board;
-        const currBoardTasks = await connection.manager.find(entities_1.Tasks, { board: currBoard });
-        if (direction == "right") {
-            // change the current task's board id to the id of the board to the right (targetBoard)
-            const targetBoard = await connection.manager.findOne(entities_1.Boards, { index: currBoard.index + 1 });
-            const targetBoardTasks = await connection.manager.find(entities_1.Tasks, { board: targetBoard });
-            currTask.board = targetBoard;
-            currTask.index = targetBoardTasks.length;
-            await connection.manager.save(currTask);
-            const prevBoard = await connection.manager.findOne(entities_1.Boards, { index: currTask.board.index - 1 });
-            const prevBoardTasks = await connection.manager.find(entities_1.Tasks, { board: prevBoard });
-            // const tasksRepository = await connection.manager.find(Tasks)
-            // await prevBoardTasks.forEach(async (task, i) => {
-            //   task.index = i
-            //   await connection.manager.save(task)
-            //   // const allTasks = await connection.manager.find(Tasks)
-            // })
-            const taskArr = [];
-            prevBoardTasks.forEach(async (task, i) => {
-                task.index = i;
-                taskArr.push(task);
-            });
-            await connection.manager.save(taskArr);
-            // await connection.manager.save(prevBoard.tasks)
-            // const newBoard = await connection.manager.findOne(Boards, { where: { user: user, id: prevBoard.id }})
-            // const newBoardTasks = await connection.manager.find(Tasks, { board: newBoard })
-            getBoards(session.user)
-                .then(boards => sendBoards(res, boards));
-        }
-        if (direction == "left") {
-            // change the current tasks's board id to the id of the board to the left (targetBoard)
-            const targetBoard = await connection.manager.findOne(entities_1.Boards, { index: currBoard.index - 1 });
-            const targetBoardTasks = await connection.manager.find(entities_1.Tasks, { board: targetBoard });
-            const prevTaskIndex = currTask.index;
-            // change current task's index to be the last item on the target board
-            // const updatedTask = await connection.manager.update(Tasks, taskID, { board: targetBoard, index: targetBoardTasks.length})
-            currTask.board = targetBoard;
-            currTask.index = targetBoardTasks.length;
-            await connection.manager.save(currTask);
-            const prevBoard = await connection.manager.findOne(entities_1.Boards, { where: { user: session.user, index: currTask.board.index + 1 } });
-            const prevBoardTasks = await connection.manager.find(entities_1.Tasks, { board: prevBoard });
-            const taskArr = [];
-            prevBoardTasks.forEach(async (task, i) => {
-                task.index = i;
-                taskArr.push(task);
-            });
-            await connection.manager.save(taskArr);
-            // console.log("PREV BOARD", prevBoard)
-            // console.log("PREV BOARD TASKS", prevBoard.tasks)
-            //   prevBoardTasks.forEach(async (task, i) => {
-            //     console.log(i)
-            //     console.log(task.index)
-            //     task.index = i
-            //     await connection.manager.save(task)
-            //   })
-            getBoards(session.user)
-                .then(boards => sendBoards(res, boards));
-        }
-        if (direction == "up") {
-            // find the current task & find the task at the previous index
-            const prevTask = await connection.manager.findOne(entities_1.Tasks, { board: currBoard, index: currTask.index - 1 });
-            await connection.manager.update(entities_1.Tasks, taskID, { index: currTask.index - 1 });
-            await connection.manager.update(entities_1.Tasks, prevTask.id, { index: currTask.index });
-            getBoards(session.user)
-                .then(boards => sendBoards(res, boards));
-        }
-        if (direction == "down") {
-            // find the task at currtask index + 1
-            const nextTask = await connection.manager.findOne(entities_1.Tasks, { board: currBoard, index: currTask.index + 1 });
-            await connection.manager.update(entities_1.Tasks, taskID, { index: currTask.index + 1 });
-            await connection.manager.update(entities_1.Tasks, nextTask.id, { index: currTask.index });
-            getBoards(session.user)
-                .then(boards => sendBoards(res, boards));
-        }
+        const targetBoard = await connection.manager.findOne(entities_1.Boards, { where: { user: session.user, index: currBoard.index + 1 } });
+        const targetBoardTasks = await connection.manager.find(entities_1.Tasks, { board: targetBoard });
+        currTask.board = targetBoard;
+        currTask.index = targetBoardTasks.length;
+        await connection.manager.save(currTask);
+        // re-index previous board's tasks
+        const formerBoard = await connection.manager.findOne(entities_1.Boards, { where: { user: session.user, index: currTask.board.index - 1 } });
+        const formerBoardTasks = await connection.manager.find(entities_1.Tasks, { board: formerBoard });
+        const taskArr = [];
+        formerBoardTasks.forEach(async (task, i) => {
+            task.index = i;
+            taskArr.push(task);
+        });
+        await connection.manager.save(taskArr);
+        getBoards(session.user)
+            .then(boards => sendBoards(res, boards));
+    }));
+    app.post("/moveTask/left", guarded(async (req, res, session) => {
+        const taskID = req.body.taskID;
+        const currTask = await connection.manager.findOne(entities_1.Tasks, taskID, { relations: ["board"] });
+        const currBoard = currTask.board;
+        const targetBoard = await connection.manager.findOne(entities_1.Boards, { where: { user: session.user, index: currBoard.index - 1 } });
+        const targetBoardTasks = await connection.manager.find(entities_1.Tasks, { board: targetBoard });
+        currTask.board = targetBoard;
+        currTask.index = targetBoardTasks.length;
+        await connection.manager.save(currTask);
+        // re-index previous board's tasks
+        const formerBoard = await connection.manager.findOne(entities_1.Boards, { where: { user: session.user, index: currTask.board.index + 1 } });
+        const formerBoardTasks = await connection.manager.find(entities_1.Tasks, { board: formerBoard });
+        const taskArr = [];
+        formerBoardTasks.forEach(async (task, i) => {
+            task.index = i;
+            taskArr.push(task);
+        });
+        await connection.manager.save(taskArr);
+        getBoards(session.user)
+            .then(boards => sendBoards(res, boards));
+    }));
+    app.post("/moveTask/up", guarded(async (req, res, session) => {
+        const taskID = req.body.taskID;
+        const currTask = await connection.manager.findOne(entities_1.Tasks, taskID, { relations: ["board"] });
+        const currBoard = currTask.board;
+        const prevTask = await connection.manager.findOne(entities_1.Tasks, { board: currBoard, index: currTask.index - 1 });
+        await connection.manager.update(entities_1.Tasks, taskID, { index: currTask.index - 1 });
+        await connection.manager.update(entities_1.Tasks, prevTask.id, { index: prevTask.index + 1 });
+        getBoards(session.user)
+            .then(boards => sendBoards(res, boards));
+    }));
+    app.post("/moveTask/down", guarded(async (req, res, session) => {
+        const taskID = req.body.taskID;
+        const currTask = await connection.manager.findOne(entities_1.Tasks, taskID, { relations: ["board"] });
+        const currBoard = currTask.board;
+        const nextTask = await connection.manager.findOne(entities_1.Tasks, { board: currBoard, index: currTask.index + 1 });
+        await connection.manager.update(entities_1.Tasks, taskID, { index: currTask.index + 1 });
+        await connection.manager.update(entities_1.Tasks, nextTask.id, { index: currTask.index });
+        getBoards(session.user)
+            .then(boards => sendBoards(res, boards));
     }));
     app.post("/logout", guarded(async (req, res, session) => {
-        console.log("session passed from guarded", session);
         const sessionRepository = connection.getRepository(entities_1.Sessions);
         await sessionRepository.remove(session)
             .then((response) => {
-            console.log("respoonse after delete", response);
             res.send({
                 success: true
             });

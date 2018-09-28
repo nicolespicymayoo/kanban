@@ -1,11 +1,14 @@
 import * as React from 'react' 
-import fetchAPI from './fetchAPI'
+import { fetchPOST } from './fetchAPI'
+import { Link } from "react-router-dom";
+import styled from 'styled-components'
 
 interface State {
   username: string,
   password: string
   secondPassword: string
-  passwordError: boolean
+  passwordMatchError: boolean
+  noPasswordError: boolean
 }
 
 class SignUp extends React.Component<{}, State> {
@@ -13,7 +16,8 @@ class SignUp extends React.Component<{}, State> {
     username: '',
     password: '',
     secondPassword: '',
-    passwordError: false
+    passwordMatchError: false,
+    noPasswordError: false
   }
 
   handleChangeUsername = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -32,41 +36,95 @@ class SignUp extends React.Component<{}, State> {
     const username = this.state.username
     const password = this.state.password
     const secondPassword = this.state.secondPassword
-
-    if (password === secondPassword) {
-      fetchAPI('/signup', 'POST', {
+    if (!password || !secondPassword ){
+      this.setState({ noPasswordError: true})
+    }
+    if (password !== secondPassword) {
+      this.setState({ passwordMatchError: true })
+    }
+    if (password !== '' && secondPassword !== '' && password === secondPassword) {
+      fetchPOST('/signup', {
         username: username,
         password: password,
       }).then(response => response.json())
       .then(res => {
         if (res.success) {
           localStorage.setItem('sessionToken', res.token)
+          localStorage.setItem('signedUp', 'true')
           location.href = '/kanban'
         } 
       }).catch(error => console.log(error))
-    } else {
-      this.setState({ passwordError: true })
     }
   }
 
   render(){
     return (
-      <div className='signUpForm'>
-        <div className='title'>Sign Up</div>
-        <input className='username' onChange={this.handleChangeUsername} />
-        <input className='password' onChange={this.handleChangePassword} type='password' />
-        <input className='password' onChange={this.handleChangeSecondPassword} type='password' />
-        <button className='submitButton' onClick={this.submitForm}>Sign In</button>
-        {this.state.passwordError ? <div>Passwords do not match. Please try again.</div> : null}
-      </div>
+      <Container>
+        <SignupForm>
+          <Title>Sign Up</Title>
+          <Input placeholder='username' onChange={this.handleChangeUsername} />
+          <Input placeholder='password' onChange={this.handleChangePassword} type='password' />
+          <Input placeholder='re-type password' onChange={this.handleChangeSecondPassword} type='password' />
+          <Button onClick={this.submitForm}>Sign In</Button>
+          <Login>Already have an account? <Link to='/login'>Log In</Link></Login>
+          <PasswordError>
+            {this.state.passwordMatchError ? <div>Passwords do not match. Please try again.</div> : <div />}
+            {this.state.noPasswordError ? 'Please enter password' : <div/>}
+          </PasswordError>
+        </SignupForm>
+      </Container>
     )
   }
 }
 
 export default SignUp
 
+const Container = styled.div`
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`
 
-// username input
-// password input
-// check password input
+const SignupForm = styled.div`
+  border: 1px solid rgba(0,0,0,.1);
+  padding: 50px 40px 60px
+  border-radius: 5px;
+`
 
+const Title = styled.h3`
+  font-weight: 200;
+  width: auto;
+  margin: 0;
+  margin-bottom: 25px;
+`
+const Input = styled.input`
+  display: block;
+  height: 28px;
+  width: 200px;
+  padding-left: 5px;
+  margin: 4px 0;
+  font-size: 14px;
+  font-weight: 200;
+`
+const Button = styled.button`
+  width: 200px;
+  height: 28px;
+  background-color: rgba(82, 194, 250, .5);
+  border: 1px solid rgba(42, 152, 247, .8);
+  border-radius: 3px;
+  color: white;
+  font-size: 13px;
+  margin: 20px 0 8px;
+`
+
+const PasswordError = styled.div`
+  font-size: 13px;
+  margin-top: 20px;
+  width: 200px;
+`
+
+const Login = styled.div`
+  font-size: 12px;
+`
